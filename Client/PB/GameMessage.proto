@@ -1,0 +1,237 @@
+// Protobuf Version 3.5.0
+
+syntax = "proto3";
+
+// 注册请求
+message PRegisterRequest
+{
+  string UserName = 1; // 用户名
+  string PassWord = 2; // 密码
+}
+
+// 注册结果
+message PRegisterRespond
+{
+  int32 Success = 1; // 是否注册成功了，1表示成功
+  int32 ErrorCode = 2; // 如果注册失败了，这个数字表示发生了哪种错误
+}
+
+// 登录请求
+message PLoginRequest
+{
+  string UserName = 1; // 用户名
+  string PassWord = 2; // 密码
+}
+
+// 登录结果
+message PLoginRespond
+{
+  int32 Success = 1; // 是否登录成功了，1表示成功
+  int32 ErrorCode = 2; // 如果登录失败了，这个数字表示发生了哪种错误
+}
+
+// 客户端请求匹配
+message PMatchRequest
+{
+  int32 HeroID = 1; // 选择的哪个人物，1-4
+  int32 SkinID = 2; // 选择的哪个皮肤，1-4
+  string UserName = 3;// 带上名称请求匹配
+}
+
+// 客户端请求取消匹配
+// message PCancelMatchRequest { }
+
+// 服务器已经找到了匹配
+// 注意这个消息的大小
+// 匹配到游戏之后客户端就告诉玩家，5S后进入游戏，然后加载游戏
+// 游戏加载好之后，通知服务器，客户端先禁止玩家操作
+// 等其他玩家都加载好之后，服务器统一说开始
+message PMatchFoundRespond
+{
+  // 找到的其他玩家的信息
+  message POtherPlayerInfo
+  {
+    int32 PlayerID = 1; // 其他玩家ID
+    string PlayerName = 2;
+    int32 HeroID = 3;
+    int32 SkinID = 4;
+  }
+  
+  int32 RandomSeed = 1; // 随机数种子
+  repeated POtherPlayerInfo OtherPlayers = 2; // 应该重复4次
+}
+
+// 客户端地图已经加载完成，等待其他玩家中
+// message PMapLoadedRequest { }
+
+// 所有玩家都已经加载完成了，可以开始游戏了
+// message PAllPlayerLoadedRespond { }
+
+// 下面的消息暂时都不用了，为了保持兼容性先保留
+// 客户端移动
+message PPlayerMoveRequest
+{
+  float X = 1;
+  float Y = 2;
+}
+
+// 服务器分发的某个玩家移动
+message PPlayerMoveRespond
+{
+  int32 PlayerID = 1;
+  float X = 2;
+  float Y = 3;
+}
+
+// 客户端转向
+message PPlayerTurnRequest
+{
+  float X = 1;
+  float Y = 2;
+}
+
+// 服务器分发的某个玩家转向
+message PPlayerTurnRespond
+{
+  int32 PlayerID = 1;
+  float X = 2;
+  float Y = 3;
+}
+
+// 客户端的血量或者血量上限变化，受伤、回复、购买提升生命上限的装备的时候都会发送
+// 只有自己有权限更改自己的血量
+message PPlayerHealthRequest
+{
+  float HealthMax = 1;
+  float HealthRemain = 2;
+}
+
+// 服务器分发的血量变化消息
+message PPlayerHealthRespond
+{
+  int32 PlayerID = 1;
+  float HealthMax = 2;
+  float HealthRemain = 3;
+}
+
+// 玩家动作
+message PPlayerActionRequest
+{
+  float LocationX = 1;
+  float LocationY = 2;
+  float TargetX = 3;
+  float TargetY = 4;
+  int32 ActionID = 5;
+}
+
+// 服务器广播的玩家动作
+message PPlayerActionRespond
+{
+  int32 PlayerID = 1;
+  float LocationX = 2;
+  float LocationY = 3;
+  float TargetX = 4;
+  float TargetY = 5;
+  int32 ActionID = 6;
+}
+
+// 玩家购买物品获得增益，现在只有提升伤害一种Buff
+message PPlayerBuffRequest
+{
+  float Scale = 1; // 伤害倍率
+}
+
+// 服务器广播某个玩家获得增益
+message PPlayerBuffRespond
+{
+  int32 PlayerID = 1;
+  float Scale = 2;
+}
+
+// 某个客户端击杀了某个野怪
+message PMonsterKilledRequest
+{
+  int32 MonsterID = 1;
+}
+
+// 经过服务器的判重，确定某个客户端击杀了某个野怪
+message PMonsterKilledRespond
+{
+  int32 PlayerID = 1;
+  int32 MonsterID = 2;
+}
+
+// 客户端自己被击杀了
+// 只有自己有权限发自己被击杀了
+message PKilledRequest
+{
+  int32 OtherPlayerID = 1; // 被谁击杀的，有可能为0，是被毒死的
+}
+
+// 有玩家被击杀了
+message PKilledRespond
+{
+  int32 DiedPlayerID = 1; // 谁被击杀了
+  int32 KillerID = 2; // 谁击杀的，有可能为0，玩家被毒死的，或者短线了，就当他死了
+  int32 Rank = 3; // 死亡玩家的名次，死的时候还剩下X个人，名次就是X+1
+}
+
+// 玩家死亡后，就不会在再往服务器发送任何消息了
+// 但是有可能因为网络延迟，服务器发送某个玩家死亡后短暂时间内，还会收到几条死亡玩家的消息，忽略即可
+// 但是还在游戏中的玩家的动作，服务器还是正常转发给死亡的玩家，死亡的玩家就可以观战了
+
+// 玩家退出游戏，玩家不想观战后，点击按钮退出游戏
+// message PQuitRequest { }
+// 退出游戏后，服务器就不再给客户端转发消息了
+
+// 上面的消息暂时都不用了，为了保持兼容性先保留
+
+// 心跳检测，定时发送
+// message PHeart { }
+
+// 玩家信息
+message PPlayerInfo
+{
+  // 在下面增加
+}
+
+// 新增加的两个结构体
+// 游戏过程中先只发下面这两个 + 心跳检测
+// 从客户端到服务器，表示客户端的一帧
+message PClientStep
+{
+  message Vec2
+  {
+    float X = 1;
+    float Y = 2;
+  }
+  message Action
+  {
+    int32 Type = 1;
+    Vec2 Location = 2;
+    Vec2 Target = 3;
+  }
+
+  int32 StepIndex = 1; // 帧号
+
+  Vec2 MoveInThisStep = 2;
+  Vec2 TurnInThisStep = 3;
+  repeated Action ActionsInThisStep = 4;
+
+  float LastHealthInThisStep = 5;
+}
+
+// 从服务器广播到客户端，表示客户端的一帧
+message PServerStep
+{
+  message Client
+  {
+    int32 PlayerID = 1;
+    int32 IsEmpty = 2; // 是否是空操作，如果是空操作的话，下面的Step就不用管了
+
+    PClientStep Step = 3;
+  }
+
+  int32 StepIndex = 1; // 帧号
+  repeated Client AllClients = 2; // 必须是所有的客户端
+}
