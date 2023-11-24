@@ -1,4 +1,4 @@
-# ParagonRoyale
+![Logo](./Media/Logo.png)
 
 ## About
 
